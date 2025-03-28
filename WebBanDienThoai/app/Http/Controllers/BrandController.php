@@ -89,6 +89,11 @@ class BrandController extends Controller
         }
 
         if ($request->hasFile('image')) {
+            $oldImagePath = str_replace('/storage/', '', $brand->logo);
+            if (Storage::disk('public')->exists($oldImagePath)) {
+                Storage::disk('public')->delete($oldImagePath);
+            }
+
             $image = $request->file('image');
             $path = $image->store('images/brands', 'public');
             $logo = '/storage/' . $path;
