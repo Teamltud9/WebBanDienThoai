@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->uuid('orderId')->primary();
-            $table->decimal('totalPrice');
+            $table->decimal('totalPrice', 15, 2);
             $table->timestamps();
             $table->uuid('userId');
             $table->foreign('userId')->references('userId')->on('users')->onDelete('cascade');

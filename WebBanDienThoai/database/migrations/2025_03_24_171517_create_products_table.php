@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->uuid('productId')->primary();;
             $table->string('productName');
-            $table->decimal('productPrice');
+            $table->decimal('productPrice', 15, 2);
             $table->string('description');
             $table->string('CPU');
-            $table->string('RAM');
+            $table->integer('RAM');
             $table->string('storage');
             $table->string('display');
-            $table->string('battery');
+            $table->integer('battery');
             $table->boolean('isDeleted')->default(false);
             $table->uuid('brandId');
             $table->foreign('brandId')->references('brandId')->on('brands')->onDelete('cascade');

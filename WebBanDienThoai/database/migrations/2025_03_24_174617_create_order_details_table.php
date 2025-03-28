@@ -24,7 +24,7 @@ return new class extends Migration
             $table->primary(['orderId', 'productId']);
 
             $table->integer('quantity');
-            $table->decimal('price');
+            $table->decimal('price', 15, 2);
         });
     }
 

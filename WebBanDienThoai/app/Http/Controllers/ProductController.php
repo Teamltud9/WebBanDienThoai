@@ -43,20 +43,37 @@ class ProductController extends Controller
      */
     public function create(Request $request)
     {
-        //
         try {
             $request->validate([
                 'productName' => 'required|string',
-                'productPrice' => 'required|numeric',
-                'description' => 'nullable|string',
-                'CPU' => 'nullable|string',
-                'RAM' => 'nullable|string',
-                'storage' => 'nullable|string',
-                'display' => 'nullable|string',
-                'battery' => 'nullable|string',
+                'productPrice' => 'required|numeric|min:0',
+                'description' => 'required|string',
+                'CPU' => 'required|string',
+                'RAM' => 'required|integer|min:0',
+                'storage' => 'required|string',
+                'display' => 'required|string',
+                'battery' => 'required|integer|min:0',
                 'brandId' => 'required|exists:brands,brandId',
-                'productImages' => 'nullable|array',
+                'productImages' => 'required|array',
                 'productImages.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            ], [
+                'productName.required'      => 'Vui lòng nhập tên sản phẩm.',
+                'productPrice.required'     => 'Vui lòng nhập giá sản phẩm.',
+                'productPrice.min'          => 'Giá sản phẩm không thể nhỏ hơn 0.',
+                'description.required'      => 'Vui lòng nhập mô tả sản phẩm.',
+                'CPU.required'              => 'Vui lòng nhập thông tin CPU.',
+                'RAM.required'              => 'Vui lòng nhập thông tin RAM.',
+                'RAM.min'                   => 'Dung lượng RAM không thể nhỏ hơn 0.',
+                'storage.required'          => 'Vui lòng nhập thông tin bộ nhớ.',
+                'display.required'          => 'Vui lòng nhập thông tin màn hình.',
+                'battery.required'          => 'Vui lòng nhập dung lượng pin.',
+                'battery.min'               => 'Dung lượng pin không thể nhỏ hơn 0.',
+                'brandId.required'          => 'Vui lòng chọn thương hiệu.',
+                'brandId.exists'            => 'Thương hiệu không hợp lệ.',
+                'productImages.required'    => 'Vui lòng tải lên ít nhất một hình ảnh sản phẩm.',
+                'productImages.*.image'     => 'Tệp tải lên phải là hình ảnh.',
+                'productImages.*.mimes'     => 'Hình ảnh phải có định dạng jpeg, png, jpg hoặc gif.',
+                'productImages.*.max'       => 'Dung lượng hình ảnh không được vượt quá 2MB.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -103,24 +120,32 @@ class ProductController extends Controller
 
         try {
             $request->validate([
-                'productName' => 'required|string',
-                'productPrice' => 'required|numeric',
-                'description' => 'nullable|string',
-                'CPU' => 'nullable|string',
-                'RAM' => 'nullable|string',
-                'storage' => 'nullable|string',
-                'display' => 'nullable|string',
-                'battery' => 'nullable|string',
-                'brandId' => 'required|exists:brands,brandId',
-                'productImages' => 'nullable',
+                'productName' => 'string',
+                'productPrice' => 'numeric|min:0',
+                'description' => 'string',
+                'CPU' => 'string',
+                'RAM' => 'integer|min:0',
+                'storage' => 'string',
+                'display' => 'string',
+                'battery' => 'integer|min:0',
+                'brandId' => 'exists:brands,brandId',
+                'productImages' => 'array',
                 'productImages.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            ], [
+                'productPrice.min'          => 'Giá sản phẩm không thể nhỏ hơn 0.',
+                'RAM.min'                   => 'Dung lượng RAM không thể nhỏ hơn 0.',
+                'battery.min'               => 'Dung lượng pin không thể nhỏ hơn 0.',
+                'brandId.exists'            => 'Thương hiệu không hợp lệ.',
+                'productImages.*.image'     => 'Tệp tải lên phải là hình ảnh.',
+                'productImages.*.mimes'     => 'Hình ảnh phải có định dạng jpeg, png, jpg hoặc gif.',
+                'productImages.*.max'       => 'Dung lượng hình ảnh không được vượt quá 2MB.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
-                'code' => 422,
+                'code' => 500,
                 'time' => now()->toISOString(),
                 'errors' => $e->errors()
-            ], 422);
+            ], 500);
         }
 
         $product->update($request->except(['productImages']));
@@ -130,8 +155,10 @@ class ProductController extends Controller
             $oldImages = ImageProduct::where('productId', $product->productId)->get();
 
             foreach ($oldImages as $oldImage) {
-                $oldImagePath = str_replace('/storage/', 'public/', $oldImage->imagePath);
-                Storage::delete($oldImagePath);
+                $oldImagePath = str_replace('/storage/', '', $oldImage->imagePath);
+                if (Storage::disk('public')->exists($oldImagePath)) {
+                    Storage::disk('public')->delete($oldImagePath);
+                }
             }
 
             ImageProduct::where('productId', $product->productId)->delete();
