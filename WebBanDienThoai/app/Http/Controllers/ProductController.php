@@ -204,15 +204,22 @@ class ProductController extends Controller
             'message' => 'Xóa sản phẩm thành công!'
         ], 200);
     }
+    
     public function filter(Request $request)
     {
         $query = Product::query();
 
-        $filters = ['brand','RAM', 'storage'];
+        $filters = ['RAM', 'storage'];
         foreach ($filters as $filter) {
             if ($request->has($filter) && !empty($request->$filter)) {
                 $query->where($filter, $request->$filter);
             }
+        }
+
+        if ($request->has('brand') && !empty($request->brand)) {
+            $query->whereHas('brand', function ($q) use ($request) {
+                $q->where('brandName', $request->brand);
+            });
         }
 
         if ($request->has('minPrice') && is_numeric($request->minPrice)) {
@@ -235,4 +242,6 @@ class ProductController extends Controller
             'data' => $products
         ], 200);
     }
+    
+
 }
