@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -34,5 +35,16 @@ Route::middleware(['checkToken', 'role:Admin'])->group(function () {
         Route::post('/', [ProductController::class, 'create']);
         Route::post('/{productId}', [ProductController::class, 'update']);
         Route::delete('/{productId}', [ProductController::class, 'delete']);
+    });
+});
+//Cart Routes
+Route::middleware(['session','checkToken', 'role:User'])->group(function () {
+
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'getCart']);
+        Route::post('/add/{productId}', [CartController::class, 'addToCart']);
+        Route::put('/update/{productId}', [CartController::class, 'updateCart']);
+        Route::delete('/delete/{productId}', [CartController::class, 'removeFromCart']);
+        Route::delete('/clear', [CartController::class, 'clearCart']);
     });
 });
