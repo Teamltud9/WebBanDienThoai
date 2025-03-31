@@ -204,4 +204,44 @@ class ProductController extends Controller
             'message' => 'Xóa sản phẩm thành công!'
         ], 200);
     }
+    
+    public function filter(Request $request)
+    {
+        $query = Product::query();
+
+        $filters = ['RAM', 'storage'];
+        foreach ($filters as $filter) {
+            if ($request->has($filter) && !empty($request->$filter)) {
+                $query->where($filter, $request->$filter);
+            }
+        }
+
+        if ($request->has('brand') && !empty($request->brand)) {
+            $query->whereHas('brand', function ($q) use ($request) {
+                $q->where('brandName', $request->brand);
+            });
+        }
+
+        if ($request->has('minPrice') && is_numeric($request->minPrice)) {
+            $query->where('productPrice', '>=', $request->minPrice);
+        }
+
+        if ($request->has('maxPrice') && is_numeric($request->maxPrice)) {
+            $query->where('productPrice', '<=', $request->maxPrice);
+        }
+
+        if ($request->has('query') && !empty($request->query)) {
+            $query->where('productName', 'LIKE', '%' . $request->keyword . '%');
+        }
+
+
+        $products = $query->where('isDeleted', false)->with(['brand', 'imageProducts'])->get();
+        return response()->json([
+            'code' => 200,
+            'time' => now()->toISOString(),
+            'data' => $products
+        ], 200);
+    }
+    
+
 }

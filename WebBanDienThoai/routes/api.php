@@ -10,7 +10,10 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/brand', [BrandController::class, 'getAllBrand']);
 Route::get('/products', [ProductController::class, 'getAll']);
+Route::get('/products/filter', [ProductController::class, 'filter']);
 Route::get('/products/{productId}', [ProductController::class, 'getById']);
+
+
 
 Route::middleware(['checkToken'])->group(function () {
 
