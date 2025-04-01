@@ -6,6 +6,7 @@ use App\Models\Review;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
@@ -196,18 +197,28 @@ class ReviewController extends Controller
     /**
      * Soft delete a review.
      */
-    public function delete($previewId)
+    public function delete(Request $request, $previewId)
     {
         $review = Review::where('previewId', $previewId)
             ->where('isDeleted', false)
             ->first();
-            
+
         if (!$review) {
             return response()->json([
                 'code' => 404,
                 'time' => now()->toISOString(),
-                'error' => 'Không tìm thấy đánh giá!'
+                'error' => 'Không tìm thấy đánh giá hoặc đánh giá đã bị xóa!'
             ], 404);
+        }
+
+        $currentUserId = Auth::id();
+
+        if ($review->userId !== $currentUserId) {
+            return response()->json([
+                'code' => 403,
+                'time' => now()->toISOString(),
+                'error' => 'Bạn không có quyền xóa đánh giá này!'
+            ], 403);
         }
 
         $review->update(['isDeleted' => true]);
