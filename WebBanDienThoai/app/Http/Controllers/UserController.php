@@ -10,6 +10,28 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    public function getAllUser(Request $request)
+    {
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
+        $query = User::where('isDeleted', false)
+                    ->whereHas('role', function ($query) {
+                        $query->where('roleName', '!=', 'Admin');
+                    });
+        if ($pageSize) {
+            $users = $query->paginate($pageSize, ['*'], 'page', $page);
+            
+        } else {
+            $users = $query->get(); 
+        }
+        return response()->json([
+            'code' => 200,
+            'time' => now()->toISOString(),
+            'result' => $users
+        ]);
+    }
+
+
     public function updateProfile(Request $request)
     {
 

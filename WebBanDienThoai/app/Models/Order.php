@@ -14,7 +14,7 @@ class Order extends Model
     public $timestamps = true;
     protected $keyType = 'string';
     
-    protected $fillable = ['totalPrice'];
+    protected $fillable = ['totalPrice', 'userId'];
 
     public function user()
     {
