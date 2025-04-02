@@ -29,6 +29,7 @@ Route::middleware(['checkToken', 'role:Admin'])->group(function () {
     Route::post('/brand/update/{brandId}', [BrandController::class, 'updateBrand']);
     Route::delete('/brand/delete/{brandId}', [BrandController::class, 'deleteBrand']);
 
+    Route::get('/user', [UserController::class, 'getAllUser']);
     //Product Routes
     Route::prefix('products')->group(function () {
 
@@ -46,5 +47,6 @@ Route::middleware(['session','checkToken', 'role:User'])->group(function () {
         Route::put('/update/{productId}', [CartController::class, 'updateCart']);
         Route::delete('/delete/{productId}', [CartController::class, 'removeFromCart']);
         Route::delete('/clear', [CartController::class, 'clearCart']);
+        Route::post('/checkout', [CartController::class, 'checkout']);
     });
 });

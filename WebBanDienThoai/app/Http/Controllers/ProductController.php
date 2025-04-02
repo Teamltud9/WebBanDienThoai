@@ -13,14 +13,22 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function getAll()
+    public function getAll(Request $request)
     {
-        //
-        $products = Product::where('isDeleted', false)->with(['brand', 'imageProducts'])->get();
+
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
+        $query = Product::where('isDeleted', false)
+                    ->with(['brand', 'imageProducts']);
+        if ($pageSize) {
+            $products = $query->paginate($pageSize, ['*'], 'page', $page);
+        } else {
+            $products = $query->get(); 
+        }
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'data' => $products
+            'result' => $products
         ], 200);
     }
 

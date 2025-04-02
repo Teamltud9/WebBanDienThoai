@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -119,4 +120,51 @@ class CartController extends Controller
             'message' => 'Đã xóa toàn bộ giỏ hàng',
         ], 200);
     }
+
+    public function checkout()
+    {
+        $userId = Auth::guard('api')->user()->userId;
+        $cartKey = 'cart_' . $userId;
+
+        $cart = Session::get($cartKey, []);
+        if (empty($cart)) {
+            return response()->json([
+                'code' => 400,
+                'time' => now()->toISOString(),
+                'message' => 'Giỏ hàng của bạn đang trống',
+            ], 400);
+        }
+
+        $order = Order::create([
+            'userId' => $userId,
+            'totalPrice' => $this->calculateTotalAmount($cart),
+        ]);
+
+        
+        foreach ($cart as $productId => $item) {
+            $order->products()->attach($productId, [
+                'quantity' => $item['quantity'],
+                'price' => $item['quantity'] * $item['product']->productPrice,
+            ]);
+        }
+
+        Session::forget($cartKey);
+
+        return response()->json([
+            'code' => 200,
+            'time' => now()->toISOString(),
+            'message' => 'Thanh toán thành công',
+        ], 200);
+    }
+
+
+    private function calculateTotalAmount($cart)
+    {
+        $totalAmount = 0;
+        foreach ($cart as $item) {
+            $totalAmount += $item['quantity'] * $item['product']->productPrice;
+        }
+        return $totalAmount;
+    }
+
 }
