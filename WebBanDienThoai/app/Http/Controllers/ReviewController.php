@@ -13,25 +13,33 @@ class ReviewController extends Controller
     /**
      * Display a listing of all reviews.
      */
-    public function getAll()
+    public function getAll(Request $request)
     {
-        $reviews = Review::where('isDeleted', false)
-            ->with(['product', 'user'])
-            ->get();
-            
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
+        $query = Review::where('isDeleted', false)
+            ->with(['product', 'user']);
+        
+        if ($pageSize) {
+            $reviews = $query->paginate($pageSize, ['*'], 'page', $page);
+        } else {
+            $reviews = $query->get(); 
+        }
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'data' => $reviews
+            'result' => $reviews
         ], 200);
     }
 
     /**
      * Display reviews for a specific product.
      */
-    public function getByProductId($productId)
+    public function getByProductId(Request $request, $productId)
     {
         // Check if product exists
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
         $product = Product::where('productId', $productId)
             ->where('isDeleted', false)
             ->first();
@@ -44,32 +52,40 @@ class ReviewController extends Controller
             ], 404);
         }
         
-        $reviews = Review::where('productId', $productId)
+        $query = Review::where('productId', $productId)
             ->where('isDeleted', false)
-            ->with('user')
-            ->get();
-            
+            ->with('user');
+        if ($pageSize) {
+            $reviews = $query->paginate($pageSize, ['*'], 'page', $page);
+        } else {
+            $reviews = $query->get(); 
+        }    
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'data' => $reviews
+            'result' => $reviews
         ], 200);
     }
 
     /**
      * Display reviews by a specific user.
      */
-    public function getByUserId($userId)
+    public function getByUserId(Request $request, $userId)
     {
-        $reviews = Review::where('userId', $userId)
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
+        $query = Review::where('userId', $userId)
             ->where('isDeleted', false)
-            ->with('product')
-            ->get();
-            
+            ->with('product');
+        if ($pageSize) {
+            $reviews = $query->paginate($pageSize, ['*'], 'page', $page);
+        } else {
+            $reviews = $query->get(); 
+        }         
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'data' => $reviews
+            'result' => $reviews
         ], 200);
     }
 
@@ -107,13 +123,10 @@ class ReviewController extends Controller
             $request->validate([
                 'content' => 'required|string',
                 'productId' => 'required|exists:products,productId',
-                'userId' => 'required|exists:users,userId',
             ], [
                 'content.required' => 'Vui lòng nhập nội dung đánh giá.',
                 'productId.required' => 'Vui lòng chọn sản phẩm cần đánh giá.',
                 'productId.exists' => 'Sản phẩm không tồn tại.',
-                'userId.required' => 'Vui lòng cung cấp thông tin người dùng.',
-                'userId.exists' => 'Người dùng không tồn tại.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -136,11 +149,11 @@ class ReviewController extends Controller
             ], 404);
         }
 
+        $userId = Auth::guard('api')->user()->userId;
         $review = Review::create([
             'content' => $request->content,
             'productId' => $request->productId,
-            'userId' => $request->userId,
-            'isDeleted' => false
+            'userId' => $userId,
         ]);
 
         return response()->json([
@@ -181,6 +194,14 @@ class ReviewController extends Controller
                 'errors' => $e->errors()
             ], 500);
         }
+        $currentUserId = Auth::guard('api')->user()->userId;
+        if ($review->userId !== $currentUserId) {
+            return response()->json([
+                'code' => 403,
+                'time' => now()->toISOString(),
+                'error' => 'Bạn không có quyền sửa đánh giá này!'
+            ], 403);
+        }
 
         $review->update([
             'content' => $request->content
@@ -211,9 +232,10 @@ class ReviewController extends Controller
             ], 404);
         }
 
-        $currentUserId = Auth::id();
+        $currentUserId = Auth::guard('api')->user()->userId;
+        $role = Auth::guard('api')->user()->role -> roleName;
 
-        if ($review->userId !== $currentUserId) {
+        if ($review->userId !== $currentUserId && $role !== 'Admin') {
             return response()->json([
                 'code' => 403,
                 'time' => now()->toISOString(),

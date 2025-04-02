@@ -14,7 +14,7 @@ class Product extends Model
     public $timestamps = false;
     protected $keyType = 'string';
     
-    protected $fillable = ['productName', 'productPrice', 'description','CPU','RAM','storage','display','battery', 'brandId', 'isDeleted', 'productImage', 'productType', 'productColor', 'productWeight', 'productSize'];
+    protected $fillable = ['productName', 'productPrice', 'description','CPU','RAM','storage','display','battery', 'brandId', 'isDeleted', 'productImage'];
 
     protected $hidden = [
         'isDeleted',
