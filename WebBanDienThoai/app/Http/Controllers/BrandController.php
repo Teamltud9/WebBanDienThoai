@@ -9,14 +9,24 @@ use Illuminate\Validation\ValidationException;
 
 class BrandController extends Controller
 {
-    public function getAllBrand()
+    public function getAllBrand(Request $request)
     {
-        $brands = Brand::where('isDeleted', false)->get();
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
+        $query = Brand::where('isDeleted', false);
+                    
+        if ($pageSize) {
+            $brands = $query->paginate($pageSize, ['*'], 'page', $page);
+            
+        } else {
+            $brands = $query->get(); 
+        }
+        
 
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'data' => $brands
+            'result' => $brands
         ], 200);
     }
 
@@ -89,6 +99,11 @@ class BrandController extends Controller
         }
 
         if ($request->hasFile('image')) {
+            $oldImagePath = str_replace('/storage/', '', $brand->logo);
+            if (Storage::disk('public')->exists($oldImagePath)) {
+                Storage::disk('public')->delete($oldImagePath);
+            }
+
             $image = $request->file('image');
             $path = $image->store('images/brands', 'public');
             $logo = '/storage/' . $path;
