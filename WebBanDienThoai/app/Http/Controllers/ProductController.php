@@ -212,6 +212,20 @@ class ProductController extends Controller
             'message' => 'Xóa sản phẩm thành công!'
         ], 200);
     }
+
+
+    public function search(Request $request){
+        $keyword = $request->input('keyword');
+
+        $products = Product::where('productName', 'like', '%', $keyword, '%')->where('isDeleted', false)->get();
+
+        return response()->json([
+            'code' => 200,
+            'time' => now()->toISOString(),
+            'data' => [$products,]
+        ], 200);
+    }
+
     
     public function filter(Request $request)
     {
@@ -251,5 +265,4 @@ class ProductController extends Controller
         ], 200);
     }
     
-
 }
