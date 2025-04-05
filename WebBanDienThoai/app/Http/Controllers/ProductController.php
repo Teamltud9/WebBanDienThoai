@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ImageProduct;
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
 class ProductController extends Controller
 {
@@ -215,21 +217,31 @@ class ProductController extends Controller
 
 
     public function search(Request $request){
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
         $keyword = $request->input('keyword');
 
-        $products = Product::where('productName', 'like', '%', $keyword, '%')->where('isDeleted', false)->get();
+        $query = Product::where('productName', 'like', '%'. $keyword. '%')->where('isDeleted', false);
 
+        if ($pageSize) {
+            $products = $query->paginate($pageSize, ['*'], 'page', $page);
+        } else {
+            $products = $query->get(); 
+        }
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'data' => [$products,]
+            'result' => $products
         ], 200);
     }
 
     
     public function filter(Request $request)
     {
-        $query = Product::query();
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
+
+        $query = Product::query()->where('isDeleted', false)->with(['brand', 'imageProducts']);
 
         $filters = ['RAM', 'storage'];
         foreach ($filters as $filter) {
@@ -256,12 +268,79 @@ class ProductController extends Controller
             $query->where('productName', 'LIKE', '%' . $request->keyword . '%');
         }
 
-
-        $products = $query->where('isDeleted', false)->with(['brand', 'imageProducts'])->get();
+        if ($pageSize) {
+            $products = $query->paginate($pageSize, ['*'], 'page', $page);
+        } else {
+            $products = $query->get(); 
+        }
+        
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'data' => $products
+            'result' => $products
+        ], 200);
+    }
+
+    public function likeProduct($productId)
+    {
+        $userId = Auth::guard('api')->user()->userId;
+        $product = Product::find($productId);
+        $user = User::find($userId);
+        if (!$product) {
+            return response()->json([
+                'code' => 404,
+                'time' => now()->toISOString(),
+                'error' => 'Không tìm thấy sản phẩm!'
+            ], 404);
+        }
+        
+        $exists = $user->likedProducts()
+                ->where('products.productId', '=', $productId)
+                ->exists();
+        if ($exists) {
+            $user->likedProducts()->detach($productId);
+
+            return response()->json([
+                'code' => 200,
+                'time' => now()->toISOString(),
+                'message' => 'Bỏ thích sản phẩm thành công',
+            ]);
+        } else {
+            $user->likedProducts()->attach($productId);
+
+            return response()->json([
+                'code' => 200,
+                'time' => now()->toISOString(),
+                'message' => 'Thích sản phẩm thành công',
+            ]);
+        }
+    }
+
+    public function getLikedProducts(Request $request)
+    {
+        $pageSize = $request-> pageSize;
+        $page = $request->page ?? 1;
+        $userId = Auth::guard('api')->user()->userId;
+
+        $query = User::find($userId)->likedProducts()
+            ->where('isDeleted', false)
+            ->with(['brand', 'imageProducts']);
+
+
+        if ($pageSize) {
+            $products = $query->paginate($pageSize, ['*'], 'page', $page);
+        } else {
+            $products = $query->get(); 
+        }
+        
+        $products->each(function ($product) {
+            $product->makeHidden(['pivot']); 
+        });
+        
+        return response()->json([
+            'code' => 200,
+            'time' => now()->toISOString(),
+            'result' => $products
         ], 200);
     }
     

@@ -14,7 +14,7 @@ Route::get('/brand', [BrandController::class, 'getAllBrand']);
 Route::get('/products', [ProductController::class, 'getAll']);
 Route::get('/products/filter', [ProductController::class, 'filter']);
 Route::get('/products/{productId}', [ProductController::class, 'getById']);
-
+Route::get('/search', [ProductController::class, 'search']);
 
 // Public review routes
 Route::get('/reviews', [ReviewController::class, 'getAll']);
@@ -32,6 +32,8 @@ Route::middleware(['checkToken'])->group(function () {
     Route::post('/reviews', [ReviewController::class, 'create']);
     Route::put('/reviews/{previewId}', [ReviewController::class, 'update']);
     Route::delete('/reviews/{previewId}', [ReviewController::class, 'delete']);
+    Route::post('/like/{productId}', [ProductController::class, 'likeProduct']);
+    Route::get('/like', [ProductController::class, 'getLikedProducts']);
 });
 
 Route::middleware(['checkToken', 'role:Admin'])->group(function () {
@@ -58,5 +60,7 @@ Route::middleware(['session','checkToken', 'role:User'])->group(function () {
         Route::delete('/delete/{productId}', [CartController::class, 'removeFromCart']);
         Route::delete('/clear', [CartController::class, 'clearCart']);
         Route::post('/checkout', [CartController::class, 'checkout']);
+       
+
     });
 });
