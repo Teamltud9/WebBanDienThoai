@@ -221,7 +221,9 @@ class ProductController extends Controller
         $page = $request->page ?? 1;
         $keyword = $request->input('keyword');
 
-        $query = Product::where('productName', 'like', '%'. $keyword. '%')->where('isDeleted', false);
+        $query = Product::where('productName', 'like', '%'. $keyword. '%')
+                ->where('isDeleted', false)
+                ->with(['brand', 'imageProducts']);
 
         if ($pageSize) {
             $products = $query->paginate($pageSize, ['*'], 'page', $page);
