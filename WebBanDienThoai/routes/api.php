@@ -60,7 +60,5 @@ Route::middleware(['session','checkToken', 'role:User'])->group(function () {
         Route::delete('/delete/{productId}', [CartController::class, 'removeFromCart']);
         Route::delete('/clear', [CartController::class, 'clearCart']);
         Route::post('/checkout', [CartController::class, 'checkout']);
-       
-
     });
 });

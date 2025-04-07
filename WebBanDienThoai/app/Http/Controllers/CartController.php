@@ -26,7 +26,6 @@ class CartController extends Controller
 
         $cart = Session::get($cartKey, []); 
 
-
         if (isset($cart[$productId])) {
             $cart[$productId]['quantity'] += 1; 
         } else {
@@ -39,7 +38,7 @@ class CartController extends Controller
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
-            'message' => 'Sản phẩm đã được thêm vào giỏ hàng',
+            'message' => $cart,
         ], 200);
     }
 
