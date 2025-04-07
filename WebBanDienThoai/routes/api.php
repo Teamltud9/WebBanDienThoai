@@ -51,7 +51,7 @@ Route::middleware(['checkToken', 'role:Admin'])->group(function () {
     });
 });
 //Cart Routes
-Route::middleware(['session','checkToken', 'role:User'])->group(function () {
+Route::middleware(['checkToken', 'role:User'])->group(function () {
 
     Route::prefix('cart')->group(function () {
         Route::get('/', [CartController::class, 'getCart']);
