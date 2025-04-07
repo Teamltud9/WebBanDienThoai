@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
@@ -24,9 +25,8 @@ class CartController extends Controller
 
         $cartKey = 'cart_' . $userId; 
 
-        $cart = Session::get($cartKey, []); 
-
-
+        $cart = Redis::get($cartKey);
+        $cart = $cart ? json_decode($cart, true) : [];
         if (isset($cart[$productId])) {
             $cart[$productId]['quantity'] += 1; 
         } else {
@@ -35,7 +35,7 @@ class CartController extends Controller
                 'quantity' => 1,
             ];
         }
-        Session::put($cartKey, $cart);
+        Redis::set($cartKey, json_encode($cart));
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
@@ -47,8 +47,8 @@ class CartController extends Controller
     {
         $userId = Auth::guard('api')->user()->userId;
         $cartKey = 'cart_' . $userId;
-        $cart = Session::get($cartKey, []);
-
+        $cart = Redis::get($cartKey);
+        $cart = $cart ? json_decode($cart, true) : [];
         return response()->json([
             'code' => 200,
             'time' => now()->toISOString(),
@@ -60,7 +60,8 @@ class CartController extends Controller
     {
         $userId = Auth::guard('api')->user()->userId;
         $cartKey = 'cart_' . $userId;
-        $cart = Session::get($cartKey, []);
+        $cart = Redis::get($cartKey);
+        $cart = $cart ? json_decode($cart, true) : [];
         if (!isset($cart[$productId])) {
             return response()->json([
                 'code' => 404,
@@ -71,7 +72,7 @@ class CartController extends Controller
 
         $quantity = $request->quantity;
         $cart[$productId]['quantity'] = (int) $quantity;
-        Session::put($cartKey, $cart);
+        Redis::set($cartKey, json_encode($cart));
 
         return response()->json([
             'code' => 200,
@@ -86,7 +87,8 @@ class CartController extends Controller
     {
         $userId = Auth::guard('api')->user()->userId;
         $cartKey = 'cart_' . $userId;
-        $cart = Session::get($cartKey, []);
+        $cart = Redis::get($cartKey);
+        $cart = $cart ? json_decode($cart, true) : [];
 
         if (!isset($cart[$productId])) {
             return response()->json([
@@ -97,7 +99,7 @@ class CartController extends Controller
         }
 
         unset($cart[$productId]);
-        Session::put($cartKey, $cart);
+        Redis::set($cartKey, json_encode($cart));
 
         return response()->json([
             'code' => 200,
@@ -112,7 +114,7 @@ class CartController extends Controller
         $userId = Auth::guard('api')->user()->userId;
         $cartKey = 'cart_' . $userId;
 
-        Session::forget($cartKey); 
+        Redis::del($cartKey);
 
         return response()->json([
             'code' => 200,
@@ -126,7 +128,8 @@ class CartController extends Controller
         $userId = Auth::guard('api')->user()->userId;
         $cartKey = 'cart_' . $userId;
 
-        $cart = Session::get($cartKey, []);
+        $cart = Redis::get($cartKey);
+        $cart = $cart ? json_decode($cart, true) : [];
         if (empty($cart)) {
             return response()->json([
                 'code' => 400,
@@ -144,11 +147,11 @@ class CartController extends Controller
         foreach ($cart as $productId => $item) {
             $order->products()->attach($productId, [
                 'quantity' => $item['quantity'],
-                'price' => $item['quantity'] * $item['product']->productPrice,
+                'price' => $item['quantity'] * $item['product']['productPrice'],
             ]);
         }
 
-        Session::forget($cartKey);
+        Redis::del($cartKey);
 
         return response()->json([
             'code' => 200,
@@ -162,7 +165,7 @@ class CartController extends Controller
     {
         $totalAmount = 0;
         foreach ($cart as $item) {
-            $totalAmount += $item['quantity'] * $item['product']->productPrice;
+            $totalAmount += $item['quantity'] * $item['product']['productPrice'];
         }
         return $totalAmount;
     }
