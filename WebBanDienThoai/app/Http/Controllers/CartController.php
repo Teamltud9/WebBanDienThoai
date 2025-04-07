@@ -13,7 +13,9 @@ class CartController extends Controller
 {
     public function addToCart($productId)
     {
-        $product = Product::find($productId);
+        $product = Product::where('isDeleted', false)
+                ->with(['imageProducts']) // eager load imageProducts
+                ->find($productId);
         $userId = Auth::guard('api')->user()->userId;
         if (!$product) {
             return response()->json([
