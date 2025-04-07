@@ -15,11 +15,11 @@
                     <article class="product-item" v-for="item in products" :key="item.productId">
                         <img :src="`http://127.0.0.1:8000${item.image_products[0].imagePath}`"
                             :alt="`http://127.0.0.1:8000${item.image_products[0].imagePath}`">
-                        <router-link :to="{ name: `product-detail`,params: { id: item.productId } }">
+                        <router-link :to="{ name: `product-detail`, params: { id: item.productId } }">
                             {{ item.productName }}
                         </router-link>
                         <p class="price">{{ formatPrice(item.productPrice) }}</p>
-                        <button>Thêm vào giỏ</button>
+                        <button :id="item.productId" @click="AddOrder(item.productId)">Thêm vào giỏi hàng</button>
                     </article>
                 </div>
 
@@ -40,6 +40,7 @@
 import ProductVM from '@/models/Enities/ProductVM';
 import ProductService from '@/services/ProductService';
 import ListBrand from '../Brand/ListBrand.vue';
+import OrderService from '../../../services/OrderService';
 // Đảm bảo đường dẫn này đúng với cấu trúc dự án của bạn
 import axiosInstance, { IMAGE_BASE_URL } from '../../../services/axiosInstance'; // Kiểm tra lại đường dẫn này
 
@@ -47,12 +48,21 @@ export default {
     data() {
         return {
             products: [new ProductVM()],
-            page: 1,         // Trang hiện tại
-            pagesize: 12,    // Số sản phẩm mỗi trang
-            hasNextPage: true // Biến cờ để biết có trang tiếp theo không (khởi tạo là true)
+            page: 1,
+            pagesize: 12,
+            hasNextPage: true,
         }
     },
     methods: {
+        async AddOrder(id) {
+            const res = await OrderService.AddOrder(id);
+            const button = document.getElementById(id);
+            button.innerText = "Đã thêm ✅";
+            setTimeout(() => {
+                button.classList.remove("accept");
+                button.innerText = "Thêm vào giỏ hàng";
+            }, 1500);
+        },
         formatPrice(value) {
             const number = Number(value); // ép kiểu
             if (isNaN(number)) return '';
@@ -135,4 +145,10 @@ export default {
 }
 </script>
 
-<style></style>
+<style>
+.accept {
+    background-color: #4caf50;
+    color: white;
+    transition: all 0.3s ease;
+}
+</style>

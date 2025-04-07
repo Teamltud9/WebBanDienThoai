@@ -16,21 +16,16 @@
                <i class="fas fa-shopping-cart"></i> Giỏ hàng
             </router-link>
           </li>
-          <!--  <li>
-            <router-link :to="{ name: 'order-history' }" active-class="active-link">
+           <li>
+            <router-link :to="{ name: 'list-history' }" active-class="active-link">
                <i class="fas fa-history"></i> Lịch sử mua hàng
             </router-link>
-          </li> -->
-           <!-- <li>
-            <router-link :to="{ name: 'warranty-lookup' }" active-class="active-link">
-               <i class="fas fa-shield-alt"></i> Tra cứu bảo hành
+          </li> 
+          <li>
+            <router-link :to="{ name: 'list-like' }" active-class="active-link">
+               <i class="fas fa-shield-alt"></i> Danh sách yêu thích
             </router-link>
           </li>
-          <li>
-            <router-link :to="{ name: 'user-offers' }" active-class="active-link">
-               <i class="fas fa-tags"></i> Ưu đãi của bạn
-            </router-link> 
-          </li> -->
           <li class="separator"></li> <li>
             <a href="#" @click.prevent="logout"> <i class="fas fa-sign-out-alt"></i> Đăng xuất
             </a>

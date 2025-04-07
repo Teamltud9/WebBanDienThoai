@@ -1,7 +1,6 @@
 <template>
   <div class="shopping-cart-page">
     <h1>Giỏ Hàng Của Bạn</h1>
-    {{ cartItems }}
     <div v-if="isLoading" class="loading-indicator">
       <p>Đang tải giỏ hàng...</p>
     </div>
@@ -10,12 +9,12 @@
       <p>{{ error }}</p>
     </div>
 
-    <div v-if="!isLoading && !error && cartItems.length === 0" class="empty-cart">
+    <!-- <div v-if="!isLoading && !error && cartItems.length === 0" class="empty-cart">
       <p>Giỏ hàng của bạn đang trống.</p>
       <router-link :to="{ name: 'home' }" class="btn-continue-shopping">Tiếp tục mua sắm</router-link>
-    </div>
-
-    <div v-if="!isLoading && cartItems.length > 0" class="cart-container">
+    </div> -->
+    <button class="btn btn-delete" @click="RemoveAll()">Xóa tất cả</button>
+    <div v-if="isLoading == false" class="cart-container">
       <table class="cart-table">
         <thead>
           <tr>
@@ -29,7 +28,6 @@
         </thead>
         <tbody>
           <tr v-for="item in cartItems" :key="item.product.productId" class="cart-item">
-            {{ item }}
             <td class="col-image">
               <img v-if="item.product.image_products && item.product.image_products.length > 0"
                 :src="`http://127.0.0.1:8000${item.product.image_products[0].imagePath}`"
@@ -59,7 +57,7 @@
           <span class="summary-label">Tổng cộng:</span>
           <span class="summary-value total-amount">{{ formattedCartTotal }}</span>
         </div>
-        <button @click="goToCheckout" class="btn-checkout">Tiến hành Thanh toán</button>
+        <button @click="Payment()" class="btn-checkout">Tiến hành Thanh toán</button>
       </div>
     </div>
   </div>
@@ -93,15 +91,30 @@ export default {
   computed: {
     // Các thuộc tính tính toán dựa trên 'data'
     cartTotal() {
-      // Tính tổng tiền giỏ hàng
-      return this.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+      return Object.values(this.cartItems).reduce((total, item) => {
+        const price = parseFloat(item.product.productPrice);
+        return total + (price * item.quantity);
+      }, 0);
     },
     formattedCartTotal() {
-      // Định dạng tổng tiền cuối cùng
       return this.formatPrice(this.cartTotal);
     }
   },
   methods: {
+    async Payment(){
+      if (!confirm(`Bạn có chắc chắn muốn thanh toán`)) {
+        return;
+      }
+      await OrderService.Checkout();
+      await this.fetchCartItems();
+    },
+    async RemoveAll(){
+      if (!confirm(`Bạn có chắc muốn xóa tất cả sản phâm ra khỏi giỏ hàng?`)) {
+        return;
+      }
+      await OrderService.RemoveAllOrder();
+      await this.fetchCartItems();
+    },
     // Các hàm xử lý logic, sự kiện
     async fetchCartItems() {
       this.isLoading = true;
@@ -112,13 +125,7 @@ export default {
         this.cartItems = res.data;
         console.log("Cart:  ", this.cartItems);
         this.isLoading = false;
-        // this.cartItems = [
-        //   { id: 1, name: 'Laptop ABC Model X', price: 15000000, quantity: 1, image: 'https://via.placeholder.com/100' }, // Sử dụng URL placeholder
-        //   { id: 2, name: 'Chuột không dây Z', price: 350000, quantity: 2, image: 'https://via.placeholder.com/100' },
-        //   { id: 3, name: 'Bàn phím cơ Y', price: 1200000, quantity: 1, image: 'https://via.placeholder.com/100' },
-        // ];
-        // console.log("Cart items loaded (mock data).");
-
+        // console.log(this.isLoading == false)
       } catch (err) {
         console.error("Error fetching cart items:", err);
         this.error = "Không thể tải giỏ hàng. Vui lòng thử lại.";
@@ -146,36 +153,31 @@ export default {
       // }
     },
 
-    removeItem(itemId) {
+    async removeItem(itemId) {
       if (!confirm(`Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?`)) {
         return;
       }
       console.log(`Removing item with id ${itemId}`);
       // Lọc ra khỏi mảng hiện tại trên UI trước
-      this.cartItems = this.cartItems.filter(item => item.id !== itemId);
-
-      // --- Gọi API để xóa sản phẩm khỏi giỏ hàng trên server ---
-      // Ví dụ:
-      // try {
-      //    await CartService.removeItem(itemId);
-      // } catch (err) {
-      //   console.error("Error removing item on server:", err);
-      //   alert("Xóa sản phẩm trên server thất bại. Vui lòng tải lại trang.");
-      //   // Có thể thêm lại sản phẩm vào UI nếu API lỗi
-      // }
+      await OrderService.RemoveOrder(itemId);
+      await this.fetchCartItems();
     },
 
     // Định dạng giá tiền cho từng sản phẩm (đơn giá)
     formatPrice(value) {
-      if (typeof value !== 'number') return '';
-      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+      const number = Number(value); // ép kiểu
+      if (isNaN(number)) return '';
+      if (number < 1000) {
+        return `${number}đ`;
+      }
+      return new Intl.NumberFormat('vi-VN').format(number) + ' đ';
     },
 
     // Định dạng tổng tiền cho một dòng sản phẩm (đơn giá * số lượng)
     formatItemTotal(item) {
-      if (!item || typeof item.price !== 'number' || typeof item.quantity !== 'number') return '';
-      const total = item.price * item.quantity;
-      return this.formatPrice(total); // Gọi lại hàm formatPrice chung
+      const number = Number(item.product.productPrice);
+      const total = number * item.quantity;
+      return this.formatPrice(total);
     },
 
     // Hàm lấy URL ảnh (giữ nguyên hoặc điều chỉnh theo thực tế)

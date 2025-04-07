@@ -27,6 +27,18 @@ const userRoutes = [ // Đổi tên biến để tránh trùng lặp nếu cần
         name: "shopping-cart",
         component: () => import("../components/Views/Users/ShoppingCart.vue"), // Component ShoppingCart đã tạo
       },
+      {
+        // Route cho trang Giỏ hàng
+        path: "like", // URL sẽ là /customer/cart
+        name: "list-like",
+        component: () => import("../components/Views/Users/ListLikes.vue"), // Component ShoppingCart đã tạo
+      },
+      {
+        // Route cho trang Giỏ hàng
+        path: "history", // URL sẽ là /customer/cart
+        name: "list-history",
+        component: () => import("../components/Views/Users/History.vue"), // Component ShoppingCart đã tạo
+      },
       
     ],
   },

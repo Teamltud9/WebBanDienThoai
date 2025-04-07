@@ -60,7 +60,7 @@ export default {
     async GetUser() {
       const response = await AuthService.GetProfile();
       this.userProfile = response;
-      console.log(userProfile);
+      console.log(this.userProfile);
     },
   },
   async created() {
