@@ -166,4 +166,18 @@ class CartController extends Controller
         return $totalAmount;
     }
 
+    public function orderHistory()
+    {
+        $userId = Auth::guard('api')->user()->userId;
+
+        $orders = Order::with(['products'])->where('userId', $userId)->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'code' => 200,
+            'time' => now()->toISOString(),
+            'orders' => $orders,
+        ], 200);
+    }
+
+
 }
